@@ -5,11 +5,12 @@
     <title>Edit Rating</title>
 </head>
 <body>
-    <form action="" method="GET">
-        <label>Book Name: {{ book.title }}</label>
-        <label>Current Rating: {{ book.rating }}</label>
-        <input type="text" name="edited rating">
-        <button type="submit">Change Rating</button>
+    <form action="{{ url_for("edit") }}" method="POST">
+        <p>Book Name: {{ book.title }}</p>
+        <p>Current Rating: {{ book.rating }}</p>
+        <input hidden="hidden" name="id" value="{{ book.id }}">
+        <input type="text" name="edited_rating" placeholder="New Rating">
+        <button type="submit" >Change Rating</button>
     </form>
 </body>
 </html>

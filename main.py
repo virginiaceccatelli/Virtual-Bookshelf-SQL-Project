@@ -1,7 +1,7 @@
 from flask import Flask, render_template, request, redirect, url_for
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
-from sqlalchemy import Integer, String, Float
+from sqlalchemy import Integer, String
 
 app = Flask(__name__)
 
@@ -17,10 +17,10 @@ db.init_app(app)
 
 class Book(db.Model):
     __tablename__ = 'List of Books'
-    id: Mapped[int] = mapped_column(primary_key=True, unique=True)
-    title: Mapped[String] = mapped_column(String(150), unique=True, nullable=False)
-    author: Mapped[String] = mapped_column(String(150), nullable=False)
-    rating: Mapped[float] = mapped_column(nullable=False)
+    id = db.Column(Integer, primary_key=True, unique=True)
+    title = db.Column(String(150), unique=True, nullable=False)
+    author = db.Column(String(150), nullable=False)
+    rating = db.Column(String, nullable=False)
 
     def __repr__(self):
         return f'<Book {self.title}>'
@@ -32,7 +32,8 @@ with app.app_context():
 
 @app.route('/')
 def home():
-    return render_template("index.html", books=db.session.query(Book).all())
+    all_books = db.session.execute(db.select(Book).order_by(Book.title)).scalars()
+    return render_template("index.html", books=all_books)
 
 
 @app.route("/add", methods=["GET", "POST"])
@@ -47,14 +48,27 @@ def add():
     return render_template("add.html")
 
 
-@app.route("/edit/<int:id>", methods=["GET", "POST"])
-def edit(id_):
-    if request.method == "GET":
-        changed_rating = request.form["changed rating"]
+@app.route("/edit", methods=["POST", "GET"])
+def edit():
+    if request.method == "POST":
+        id_ = request.form["id"]
+        changed_rating = request.form["edited_rating"]
         book_to_update = db.get_or_404(Book, id_)
-        book_to_update.rating = changed_rating
+        book_to_update.rating = str(changed_rating)
         db.session.commit()
-        return render_template("edit.html")
+        return redirect(url_for("home"))
+    id_ = request.args.get("id")
+    book = db.get_or_404(Book, id_)
+    return render_template("edit.html", book=book)
+
+
+@app.route("/delete")
+def delete():
+    book = request.args.get("id_")
+    to_delete = db.get_or_404(Book, book)
+    db.session.delete(to_delete)
+    db.session.commit()
+    return redirect(url_for("home"))
 
 
 if __name__ == "__main__":
